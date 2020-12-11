@@ -1,0 +1,462 @@
+<html>
+
+<head>
+	<meta charset="UTF-8" />
+	<title>期望管理Demo</title>
+	<script type="text/javascript" src="jQuery.js"></script>
+	<script type="text/javascript" src="controlDataManage.js"></script>
+	<script type="text/javascript" src="define.js"></script>
+	<script src="http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+	<script src="http://code.highcharts.com/highcharts.js"></script>
+</head>
+
+<body>
+	<!-- 参数配置区域 -->
+	<div style="width: 1024px; height: 150px; margin: 0 auto">
+		服务信息 ------------------------------------------------------
+		</br>
+		服务类型:
+		<font type="text" id="servertype" disabled="disabled" value=""></font>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 分数类型:
+		<font type="text" id="scoretype" disabled="disabled" value=""></font>
+		</br>
+		房间等级:
+		<font type="text" id="roomLv" disabled="disabled" value=""></font>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 单元积分:
+		<font type="text" id="cellScore" disabled="disabled" value=""></font>
+		</br>
+		目标分数区间:
+		<font type="text" id="targetScoreInterval" disabled="disabled" value=""></font>
+		</br>
+		赢分区间(1局):
+		<font type="text" id="winScoreInterval" disabled="disabled" value=""></font>
+		</br>
+		输分区间(1局):
+		<font type="text" id="lossScoreInterval" disabled="disabled" value=""></font>
+		</br>
+		局数区间:
+		<font type="text" id="drawCountInterval" disabled="disabled" value=""></font>
+		</br>
+		备注:
+		<font type="text" id="gameTip" disabled="disabled" value=""></font>
+		</br>
+		</br>
+		参数 ------------------------------------------------------------
+		</br>
+		目标分数:
+		<input type="text" id="targetScore" value=""> 目标局数:
+		<input type="text" id="targetDrawCount" value="">
+		</br>
+		趋势类型:
+		<select type="text" id="trendType" value=""> </select>
+		</br>
+		匹配规则:
+		<input type="text" id="matchingRuleType">
+		</br>
+		最小得分:
+		<input type="text" id="minScore" value=""> 最大得分:
+		<input type="text" id="maxScore" value="">
+		</br>
+		胜局占比:
+		<input type="text" id="winRatio" value=""> 输局占比:
+		<input type="text" id="lossRatio" value="">
+		</br>
+		<button type="button" onclick="createDataConfig()"> 生成配置 </button>
+		</br>
+		</br>
+		查询数据 ------------------------------------------------------------
+		</br>
+		单个数据:
+		<button type="button" onclick="getSingleDataInfo()"> 查询单个数据 </button>
+		</br>
+		多个数据:
+		<button type="button" onclick="getArrayDataInfo()"> 查询多个数据 </button>
+		</br>
+		数据结果 ------------------------------------------------------------
+		</br>
+		</br>
+		<!--目标局数信息-->
+		<font type="text" id="drawInfo" value=""></font>
+		</br>
+		<!--目标得分信息-->
+		<font type="text" id="scoreInfo" value=""></font>
+		</br>
+		<!--输赢分数信息-->
+		<font type="text" id="wlScoreInfo" value=""></font>
+		</br>
+		<!--胜局信息-->
+		<font type="text" id="winDrawInfo" value=""></font>
+		</br>
+		<!--输局信息-->
+		<font type="text" id="lossDrawInfo" value=""></font>
+		</br>
+		<!--最大重复占比-->
+		<font type="text" id="maxRepeatRatio" value=""></font>
+		</br>
+		<!--分差评测-->
+		<font type="text" id="diffScoreEvaluationDesc" value=""></font>
+		</br>
+		<!--重复比评测-->
+		<font type="text" id="repeatRatioEvaluationDesc" value=""></font>
+		</br>
+		<!--重复数据-->
+		<font type="text" id="repeatData" value=""></font>
+		</br>
+		<!--生成的数据-->
+		<font type="text" id="data" value=""></font>
+		</br>
+		<!--生成的数据分数-->
+		<font type="text" id="dataScore" value=""></font>
+		</br>
+		<!-- 曲线图1 -->
+		<div id="containerData" style="width: 1024px; height: 384px; margin: 0 auto"></div>
+		</br>
+	</div>
+	<script language="JavaScript">
+		//-----------参数定义-----------
+		//服务类型(必填参数-程序内部默认传入)
+		var in_serverType = 'fish';
+		//房间等级(必填参数-程序内部默认传入)
+		var in_roomLv = 1;
+		//分数类型(必填参数-程序内部默认传入)
+		var in_scoreType = 1;
+		//单元积分(必填参数-程序内部默认传入)
+		var in_cellScore = 1;
+		//--------------------------------
+		//其它相关变量
+		//初始化结果参数
+		var retControlDataManage = null;
+		//控制数据管理
+		var controlDataManage = null;
+		//游戏信息
+		var gameInfo = null;
+
+		//初始化数据
+		this.initData();
+
+		//根据ID获取标签
+		function getElementByID(id) {
+			var data = document.getElementById(id);
+			return data;
+		}
+
+		//设置标签文本
+		function setElementInnerText(id, text) {
+			//获取标签对象
+			var element = this.getElementByID(id);
+			if (element) {
+				element.innerText = text;
+			}
+		}
+
+		//设置标签的值
+		function setElementIntValue(id, value) {
+			//获取标签对象
+			var element = this.getElementByID(id);
+			if (element) {
+				element.value = value;
+			}
+		}
+
+		//获取标签INT值
+		function getElementIntValue(id) {
+			//获取标签对象
+			var element = this.getElementByID(id);
+			if (element) {
+				return parseInt(element.value);
+			}
+			return 0;
+		}
+
+		//初始化数据
+		function initData() {
+			//创建对象
+			{
+				//创建控制数据管理类
+				controlDataManage = ControlDataManage.constructor();
+				//初始化数据
+				retControlDataManage = controlDataManage.initData();
+				//初始化判断
+				if (!retControlDataManage || retControlDataManage.code == Define.Code.FAIL) {
+					//异常描述
+					var errorDesc = "nitData Fail(code:" + retControlDataManage.code + " error:" + retControlDataManage.error + ")!";
+					//输出日志
+					console.log(errorDesc);
+					//弹框提示
+					alert(retControlDataManage.error);
+				}
+			}
+
+			//获取基础配置
+			{
+				var baseConfig = controlDataManage.getBaseConfig();
+				//输出日志
+				console.log("----------基础配置----------");
+				//输出日志
+				console.log("支持的趋势配置:%s", JSON.stringify(baseConfig.trendTypeConfig));
+				//匹配规则
+				console.log("匹配规则:%s", JSON.stringify(baseConfig.matchingRule));
+				//输出日志
+				console.log("局数配置:%s", JSON.stringify(baseConfig.drawCountInfo));
+				//输出日志
+				console.log("赢分输分默认占比:%s", JSON.stringify(baseConfig.drawTypeRatio));
+				//输出日志
+				console.log("----------------------------");
+			}
+
+			//获取游戏配置
+			{
+				gameInfo = controlDataManage.toJsonGameInfo(in_serverType, in_roomLv, in_scoreType, in_cellScore);
+				//输出日志
+				console.log("----------游戏信息----------");
+				//输出日志
+				console.log("游戏名称:%s", JSON.stringify(gameInfo.servername));
+				//输出日志
+				console.log("游戏类型:%s", JSON.stringify(gameInfo.servertype));
+				//输出日志
+				console.log("房间等级:%s", JSON.stringify(gameInfo.roomLv));
+				//输出日志
+				console.log("分数类型:%s", JSON.stringify(gameInfo.servertype));
+				//输出日志
+				console.log("最小赢分:%s", JSON.stringify(gameInfo.minWinScore));
+				//输出日志
+				console.log("最大赢分:%s", JSON.stringify(gameInfo.maxWinScore));
+				//输出日志
+				console.log("最小输分:%s", JSON.stringify(gameInfo.minLossScore));
+				//输出日志
+				console.log("最小输分:%s", JSON.stringify(gameInfo.maxLossScore));
+				//输出日志
+				console.log("备注:%s", JSON.stringify(gameInfo.tip));
+				console.log("----------------------------");
+			}
+
+			//设置显示数据
+			{
+				//设置服务类型
+				{
+					//标签对象
+					var temp = null;
+					//设置服务类型
+					this.setElementInnerText('servertype', gameInfo.servername + "(" + gameInfo.servertype + ")");
+					//设置分数类型
+					this.setElementInnerText('scoretype', in_scoreType == 1 ? "金豆" : "元宝");
+					//设置房间等级
+					this.setElementInnerText('roomLv', gameInfo.roomLv);
+					//设置单元积分
+					this.setElementInnerText('cellScore', in_cellScore);
+					//设置目标分区间
+					this.setElementInnerText('targetScoreInterval', ((gameInfo.minWinScore * baseConfig.drawCountInfo.minDrawCount) + "至" + (gameInfo.minWinScore * baseConfig.drawCountInfo.maxDrawCount)));
+					//设置目标分区间
+					this.setElementInnerText('winScoreInterval', (gameInfo.minWinScore + "至" + gameInfo.maxWinScore + "(" + (in_scoreType == 1 ? "金豆" : "元宝") + ")"));
+					//设置输分区间
+					this.setElementInnerText('lossScoreInterval', (gameInfo.minLossScore + "至" + gameInfo.maxLossScore + "(" + (in_scoreType == 1 ? "金豆" : "元宝") + ")"));
+					//设置局数区间
+					this.setElementInnerText('drawCountInterval', (baseConfig.drawCountInfo.minDrawCount + "-" + baseConfig.drawCountInfo.maxDrawCount + "局"));
+					//设置备注
+					this.setElementInnerText('gameTip', gameInfo.tip);
+				}
+
+				//设置参数(默认值)
+				{
+					//设置目标分数
+					this.setElementIntValue('targetScore', 100000);
+					//设置目标局数
+					this.setElementIntValue('targetDrawCount', 10);
+					//设置趋势类型
+					this.setElementIntValue('trendType', baseConfig.trendTypeConfig[0].type);
+					//设置匹配规则
+					this.setElementIntValue('matchingRuleType', baseConfig.matchingRule[0].type);
+					//设置最小分数
+					this.setElementIntValue('minScore', gameInfo.minWinScore);
+					//设置最大分数
+					this.setElementIntValue('maxScore', gameInfo.maxWinScore);
+					//设置胜局占比
+					this.setElementIntValue('winRatio', baseConfig.drawTypeRatio[0].winRatio);
+					//设置输局占比
+					this.setElementIntValue('lossRatio', baseConfig.drawTypeRatio[0].lossRatio);
+					//设置趋势数据
+					for (var i = 0; i < baseConfig.trendTypeConfig.length; i++) {
+						//获取下拉对象
+						var select = document.getElementById("trendType");
+						//添加对象
+						var addOptioin = document.createElement("option");
+						//设置属性
+						addOptioin.value = baseConfig.trendTypeConfig[i].type;
+						addOptioin.text = baseConfig.trendTypeConfig[i].desc;
+						//添加选项
+						select.appendChild(addOptioin);
+					}
+				}
+			}
+		}
+
+		//设置结果数据显示信息
+		function setResultDataShowInfo(dataInfo) {
+			//临时变量
+			var stringBuf = "";
+			//得分描述
+			stringBuf = "胜局得分:" + dataInfo.winScore + " 输局得分:" + dataInfo.lossScore + " 累计得分=" + dataInfo.sumScore;
+			this.setElementInnerText('wlScoreInfo', stringBuf);
+			//胜局信息
+			stringBuf = "胜局次数:" + dataInfo.winCount + " 胜局占比:" + dataInfo.winRatio + "%";
+			this.setElementInnerText('winDrawInfo', stringBuf);
+			//输局信息
+			stringBuf = "输局次数:" + dataInfo.lossCount + " 输局占比:" + dataInfo.lossRatio + "%";
+			this.setElementInnerText('lossDrawInfo', stringBuf);
+			//重复比描述
+			stringBuf = "数据最大重复比:" + dataInfo.maxRepeatRatio + "%";
+			this.setElementInnerText('maxRepeatRatio', stringBuf);
+			//重复比评测
+			stringBuf = "重复比评测:" + JSON.stringify(dataInfo.repeatRatioEvaluationDesc);
+			this.setElementInnerText('repeatRatioEvaluationDesc', stringBuf);
+			//重复数据
+			stringBuf = "重复数据:" + JSON.stringify(dataInfo.repeatData);
+			this.setElementInnerText('repeatData', stringBuf);
+			//生成的数据
+			stringBuf = "数据:" + JSON.stringify(dataInfo.data);
+			this.setElementInnerText('data', stringBuf);
+			//生成的数据
+			stringBuf = "数据:" + JSON.stringify(dataInfo.dataScore);
+			this.setElementInnerText('dataScore', stringBuf);
+			//设置曲线图
+			{
+				//X轴数据
+				var xAxis = {};
+				//X轴点间数据
+				xAxis.categories = [];
+				for (var i = 0; i < dataInfo.data.length; i++) {
+					xAxis.categories.push(i);
+				}
+
+				//Y轴数据
+				var series = [];
+				series[0] = {};
+				series[0].name = "期望值";
+				series[0].data = [].concat(dataInfo.data);
+				var json = {};
+				json.title = { text: '生成的期望数据' };
+				json.subtitle = { text: '数据展示' };
+				json.xAxis = xAxis;
+				json.yAxis = {
+					title: {
+						text: '数据'
+					},
+					plotLines: [{
+						value: 0,
+						width: 1,
+						color: '#808080'
+					}]
+				};
+				json.tooltip = { valueSuffix: '' };
+				json.legend = {
+					layout: 'vertical',
+					align: 'right',
+					verticalAlign: 'middle',
+					borderWidth: 0
+				};
+				json.series = series;
+				$('#containerData').highcharts(json);
+			}
+		}
+
+		//生成配置
+		function createDataConfig() {
+			//初始化判断
+			if (retControlDataManage == null) {
+				//异常描述
+				var errorDesc = "controlDataManage is null!";
+				//输出日志
+				console.log(errorDesc);
+				//弹框提示
+				alert(errorDesc);
+				return;
+			}
+
+			//异常判断
+			if (retControlDataManage.code == Define.Code.FAIL) {
+				//异常描述
+				var errorDesc = "controlDataManage initData Fail(code:" + retControlDataManage.code + " error:" + retControlDataManage.error + ")!";
+				//输出日志
+				console.log(errorDesc);
+				//弹框提示
+				alert(retControlDataManage.error);
+				return;
+			}
+
+			//趋势类型(必填参数-用户填写)
+			var obj = document.getElementById("trendType");
+			//获取匹配类型
+			var in_trendType = parseInt(obj.options[obj.selectedIndex].value);
+			//匹配规则类型
+			var in_matchingRuleType = this.getElementIntValue("matchingRuleType");
+			//目标分数(必填参数-用户填写)
+			var in_targetScore = this.getElementIntValue("targetScore");
+			//局数数量(必填参数-用户填写)
+			var in_targetDrawCount = this.getElementIntValue("targetDrawCount");
+			//最小分数(选填参数(默认值0)-用户填写)
+			var in_minScore = this.getElementIntValue("minScore");
+			//最大分数(选填参数(默认值0)-用户填写)
+			var in_maxScore = this.getElementIntValue("maxScore");
+			//赢的占比(选填参数(默认值0)-用户填写)
+			var in_winRatio = this.getElementIntValue("winRatio");
+			//输的占比(选填参数(默认值0)-用户填写)
+			var in_lossRatio = this.getElementIntValue("lossRatio");
+			//生成数据
+			var ret = controlDataManage.createData(in_trendType, in_matchingRuleType, in_serverType, in_roomLv, in_scoreType, in_cellScore, in_targetScore, in_targetDrawCount, in_minScore, in_maxScore, in_winRatio, in_lossRatio);
+			//返回值判断
+			if (ret.code == Define.Code.FAIL) {
+				//异常描述
+				var errorDesc = "createData Fail(code:" + ret.code + " error:" + ret.error + ")!";
+				//输出日志
+				console.log(errorDesc);
+				//弹框提示
+				alert(ret.error);
+				return;
+			}
+			//输出日志
+			console.log("累计生成了-%d-个方案", ret.data.length);
+			//输出日志
+			for (var i = 0; i < ret.data.length; i++) {
+				//下标数据
+				var item = ret.data[i];
+				//临时变量
+				var stringBuf = "";
+				//局数描述
+				stringBuf = "目标局数:" + in_targetDrawCount + " 生成局数:" + item.length + " 局数差值=" + item.diffDrawCount;
+				this.setElementInnerText('drawInfo', stringBuf);
+				//得分描述
+				stringBuf = "目标得分:" + in_targetScore + " 预期得分:" + item.score + " 分数差值=" + item.diffScore;
+				this.setElementInnerText('scoreInfo', stringBuf);
+				//重复比评测
+				stringBuf = "分差评测:" + JSON.stringify(item.diffScoreEvaluationDesc);
+				this.setElementInnerText('diffScoreEvaluationDesc', stringBuf);
+				//获取数据信息
+				var dataInfo = controlDataManage.getDataInfo(in_serverType, in_roomLv, in_scoreType, in_cellScore, item.data);
+				//设置数据
+				this.setResultDataShowInfo(dataInfo);
+			}
+		}
+
+		//查询单个数据
+		function getSingleDataInfo() {
+			//期望值
+			var value = 6;
+			//获取数据信息
+			var dataInfo = controlDataManage.getDataInfo(in_serverType, in_roomLv, in_scoreType, in_cellScore, [value]);
+			//设置数据
+			this.setResultDataShowInfo(dataInfo);
+		}
+
+		//查询多个数据
+		function getArrayDataInfo() {
+			//期望值
+			var data = [1, 4, 6, 1, 9];
+			//获取数据信息
+			var dataInfo = controlDataManage.getDataInfo(in_serverType, in_roomLv, in_scoreType, in_cellScore, data);
+			//设置数据
+			this.setResultDataShowInfo(dataInfo);
+		}
+	</script>
+</body>
+
+</html>

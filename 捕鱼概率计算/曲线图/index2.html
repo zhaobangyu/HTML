@@ -1,0 +1,165 @@
+<html>
+
+<head>
+	<meta charset="UTF-8" />
+	<title>大金鲨捕鱼概率计算</title>
+	<script type="text/javascript" src="jQuery.js"></script>
+	<script src="http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+	<script src="http://code.highcharts.com/highcharts.js"></script>
+</head>
+
+<body>
+	<!-- 参数配置区域 -->
+	<div style="width: 1024px; height: 150px; margin: 0 auto">
+		当前库存:
+		<input type="text" id="storageValue" value="10000000"> </br>
+		库存上限:
+		<input type="text" id="maxStorageValue" value="100000"> 上限概率(提升命中率):
+		<input type="text" id="upPerProbability" value="10700"> </br>
+		库存下限:
+		<input type="text" id="minStorageValue" value="100000"> 上限概率(下降命中率):
+		<input type="text" id="lowerProbability" value="8700"> </br>
+		子弹价格:
+		<input type="text" id="bulletPrice" value="100"> </br>
+		模拟次数:
+		<input type="text" id="simulationCount" value="10"> </br>
+		<button type="button" onclick="simulationStart()"> 开始模拟 </button>
+	</div>
+	<!-- 曲线图1 -->
+	<div id="container1" style="width: 1024px; height: 384px; margin: 0 auto"></div>
+	<!-- 曲线图2 -->
+	<div id="container2" style="width: 1024px; height: 384px; margin: 0 auto"></div>
+	<!-- 曲线图3 -->
+	<div id="container3" style="width: 1024px; height: 384px; margin: 0 auto"></div>
+	<script language="JavaScript">
+		//生成随机数
+		function RandInt(min, max) {
+			return (Math.floor(Math.random() * (max - min) + min));
+		}
+
+		//读取鱼的概率配置
+		function ReadFishConfig() {
+			var configFile = "./fishconfig.json";
+
+			// //清理缓存
+			// delete require.cache[require.resolve(configFile)];
+			// //读取配置
+			// var config = require(configFile);
+			// if (config == null) {
+			// 	alert("配置文件读取失败(filepath=" + configFile + ")!");
+			// 	return null;
+			// }
+			// //鱼的信息
+			// var bridInfo = config["birdInfo"];
+			// if(bridInfo == null){
+			// 	alert("birdInfo 信息为空!");
+			// 	return null;
+			// }
+			// return birdInfo;
+			$.getJSON("js/userinfo.txt", function (data) {
+				$.each(data, function (i, item) {
+					$("#disp").append("<h3>" + item.name + "</h3>");
+					$("#disp").append("<p>" + item.sex + "</p>");
+					$("#disp").append("<p>" + item.email + "</p>");
+				});
+			});
+		}
+
+		//模拟配置
+		var simulationConfig = {};
+		//库存值
+		simulationConfig.storageValue = document.getElementById('storageValue').value;
+		//库存封顶
+		simulationConfig.maxStorageValue = document.getElementById('maxStorageValue').value;
+		//提升概率
+		simulationConfig.upPerProbability = document.getElementById('upPerProbability').value;
+		//库存下限
+		simulationConfig.minStorageValue = document.getElementById('minStorageValue').value;
+		//下调概率
+		simulationConfig.lowerProbability = document.getElementById('lowerProbability').value;
+		//子弹价格
+		simulationConfig.bulletPrice = document.getElementById('bulletPrice').value;
+		//模拟次数
+		simulationConfig.simulationCount = document.getElementById('simulationCount').value;
+		//读取文件配置
+		ReadFishConfig();
+
+		//鱼类型信息
+		var nFishTypeInfo =
+			[
+				{
+					name: "小黄鱼",
+				},
+				{
+					name: "小黄鱼",
+				}
+			];
+
+		//开始模拟数据
+		function simulationStart() {
+			setFishQx();
+		}
+
+		//默认执行模拟
+		simulationStart();
+
+		//显示数据的曲线图
+		function setFishQx() {
+			//X轴数据
+			var xAxis = {};
+			xAxis.categories = [];
+
+			//子弹数量基数(以模拟打N炮为计数,例如模拟10炮后,10的盈利情况作为基数显示)
+			var nBulletBaseCount = 100;
+			//X轴长(例如模拟1000发子弹的数据结果,哪么就以10为单位,显示一组数据)
+			var nBulletCount = 1000;
+			//设置X轴数据
+			for (var i = 0; i < nBulletCount; i++) {
+				if (i % nBulletBaseCount == 0) {
+					xAxis.categories.push(i);
+				}
+			}
+
+			//鱼种数据结果
+			var series = [];
+			//鱼种数量
+			for (var i = 0; i < nFishTypeInfo.length; i++) {
+				//设置结果为对象
+				series[i] = {};
+				series[i].name = nFishTypeInfo[i].name;
+				series[i].data = [];
+				//写入盈利情况
+				for (var k = 0; k < nBulletCount / nBulletBaseCount; k++) {
+					//添加盈利数据
+					series[i].data.push(RandInt(0, 100000000));
+				}
+			}
+
+			var json = {};
+			json.title = { text: '大金鲨捕鱼概率计算' };
+			json.subtitle = { text: '鱼种概率计算' };
+			json.xAxis = xAxis;
+			json.yAxis = {
+				title: {
+					text: '盈利情况'
+				},
+				plotLines: [{
+					value: 0,
+					width: 1,
+					color: '#808080'
+				}]
+			};
+			json.tooltip = { valueSuffix: '' };
+			json.legend = {
+				layout: 'vertical',
+				align: 'right',
+				verticalAlign: 'middle',
+				borderWidth: 0
+			};
+			json.series = series;
+			$('#container1').highcharts(json);
+		};
+	</script>
+</body>
+
+</html>
